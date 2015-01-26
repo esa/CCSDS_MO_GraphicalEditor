@@ -1,0 +1,14 @@
+package moeditor;
+
+public class XeXepwn extends Exception
+{
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -2968957937698965687L;
+
+	public XeXepwn()
+	{
+		super();
+	}
+}

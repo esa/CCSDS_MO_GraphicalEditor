@@ -1,0 +1,438 @@
+package moeditor.draw2d;
+
+import moeditor.MultiPageEditor;
+
+import org.eclipse.draw2d.ChangeEvent;
+import org.eclipse.draw2d.ChangeListener;
+import org.eclipse.draw2d.ColorConstants;
+import org.eclipse.draw2d.FigureListener;
+import org.eclipse.draw2d.FocusEvent;
+import org.eclipse.draw2d.FocusListener;
+import org.eclipse.draw2d.IFigure;
+import org.eclipse.draw2d.KeyEvent;
+import org.eclipse.draw2d.KeyListener;
+import org.eclipse.draw2d.MouseEvent;
+import org.eclipse.draw2d.MouseListener;
+import org.eclipse.draw2d.MouseMotionListener;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Color;
+
+//clipboard operation
+import java.awt.Toolkit;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.UnsupportedFlavorException;
+import java.io.IOException;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
+
+public class MultiLineLabelHandler implements MouseListener, FigureListener, ChangeListener, KeyListener, FocusListener, MouseMotionListener
+{
+	//protected Display display = Display.getDefault();
+	//private MouseEvent lastEvent;
+	private final MultiLineEditableLabel editableLabel;
+	private Color focusColor = ColorConstants.red;
+	private Color editColor = ColorConstants.lightGray;
+	private boolean control = false;
+	private boolean shift = false;
+	
+	
+
+	public MultiLineLabelHandler(MultiLineEditableLabel editableLabel)
+	{
+		this.editableLabel = editableLabel;
+		hookEventHandler(this);
+	}
+	
+	private void hookEventHandler(MultiLineLabelHandler handler)
+	{
+		editableLabel.addMouseListener(handler);
+		editableLabel.addMouseMotionListener(handler);
+		editableLabel.addChangeListener(handler);
+		editableLabel.addKeyListener(handler);
+		editableLabel.addFocusListener(handler);
+	}
+
+	@Override
+	public void focusGained(FocusEvent fe)
+	{
+		editableLabel.setBGColor(focusColor);
+		editableLabel.repaint();
+		//System.out.println("focusGained");
+	}
+
+	@Override
+	public void focusLost(FocusEvent fe)
+	{
+		editableLabel.resetBGColor();
+		//editableLabel.setInactiveAndWrite(); //?? maybe unnecessary... see: mousePressed() comments
+		editableLabel.repaint();
+		//System.out.println("focusLost");
+	}
+	
+	private boolean handleKey(KeyEvent ke)
+	{
+		if ( ( 32 <= ke.keycode && ke.keycode < 127 ) ) return true;
+		if ( ke.character == SWT.DEL ) return true;
+		if ( ke.character == '\b' ) return true;
+		if ( ke.keycode >= 16777264 && ke.keycode <= 16777273 ) return true; //numeric-keypad numbers
+		switch ( ke.keycode )
+		{
+		case SWT.PAGE_UP:
+		case SWT.PAGE_DOWN:
+		case SWT.KEYPAD_ADD:
+		case SWT.KEYPAD_CR:
+		case SWT.KEYPAD_DECIMAL:
+		case SWT.KEYPAD_DIVIDE:
+		case SWT.KEYPAD_EQUAL:
+		case SWT.KEYPAD_MULTIPLY:
+		case SWT.KEYPAD_SUBTRACT:
+		case SWT.SHIFT:
+		case SWT.CONTROL:
+		case SWT.ARROW_UP:
+		case SWT.ARROW_DOWN:
+		case SWT.ARROW_LEFT:
+		case SWT.ARROW_RIGHT:
+		case SWT.HOME:
+		case SWT.END:
+		case 13:
+		case 27:
+			return true;
+		}
+		return false;
+	}
+
+	@Override
+	public void keyPressed(KeyEvent ke)
+	{
+		//System.out.println("Active = " + editableLabel.isActive() + " Shift = " + shift + " Control = " + control);
+		if ( !editableLabel.isActive() )
+		{//no cursor... no writing (no nothing)...
+			if ( ke.keycode == 13 || ke.keycode == SWT.KEYPAD_CR )
+			{
+				//editableLabel.requestFocus();
+				editableLabel.setActive();
+			}
+			return;
+		}
+		//From here on in this method checking editableLabel.isActive is unnecessary... see: mousePressed() comments
+		
+		if ( !handleKey(ke) )
+		{//unknown key... no writing...
+			ke.consume();
+			return;
+		}
+		
+		if ( control )
+		{//special action while CTRL is pressed
+			//System.out.println(ke.keycode);
+			if(ke.keycode == 97)
+			{//control+A ... select all
+				editableLabel.selectAll();
+			}else if(ke.keycode == 99)
+			{//control+C ... COPY
+				if(!editableLabel.getSelected().isEmpty())
+				{
+					StringSelection stringSelection = new StringSelection (editableLabel.getSelected());
+					Clipboard clpbrd = Toolkit.getDefaultToolkit ().getSystemClipboard ();
+					clpbrd.setContents (stringSelection, null);
+				}
+			}else if(ke.keycode == 118)
+			{//control+V ... PASTE
+				try
+				{
+					String data = (String) Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor);
+					editableLabel.pasteStringToCursor(data);
+				}
+				catch(UnsupportedFlavorException he)
+				{
+					he.printStackTrace(MultiPageEditor.getRedStream());
+				}
+				catch(IOException ioe)
+				{
+					ioe.printStackTrace(MultiPageEditor.getRedStream());
+				}
+				
+			}
+			else if(ke.keycode == 120)
+			{//control+X ... CUT
+				if(!editableLabel.getSelected().isEmpty())
+				{
+					StringSelection stringSelection = new StringSelection (editableLabel.getSelected());
+					Clipboard clpbrd = Toolkit.getDefaultToolkit ().getSystemClipboard ();
+					clpbrd.setContents (stringSelection, null);
+					editableLabel.deleteSelection();
+				}
+			}
+			ke.consume();
+			return;
+		}
+		
+		if ( ( 32 <= ke.keycode && ke.keycode < 127 ) )
+		{//write a new character
+			editableLabel.addOneLineTextToCursor(Character.toString(ke.character));
+			ke.consume();
+		}
+		else if ( ke.keycode >= 16777264 && ke.keycode <= 16777273 )
+		{//write a keypad number
+			editableLabel.addOneLineTextToCursor(Integer.toString(ke.keycode - 16777264));
+			ke.consume();
+		}
+		else if ( ke.character == SWT.DEL )
+		{//delete
+			editableLabel.deleteCharAtCursorRight();
+			ke.consume();
+		}
+		else if ( ke.character == '\b' )
+		{//backspace
+			editableLabel.deleteCharAtCursorLeft();
+			ke.consume();
+		}
+		else if ( ke.keycode == 13 )
+		{// ??? probably enter... not found in any documentation => (MultiLine) -> newline
+			if ( !editableLabel.isRestricted() )
+			{
+				if(shift)
+				{//step out of editable label
+					editableLabel.setInactiveAndWrite();
+					//editableLabel.resetBGColor();
+				}else
+				{// write \n
+					editableLabel.addLine();
+				}
+			}
+			else
+			{
+				editableLabel.setInactiveAndWrite();
+				//editableLabel.resetBGColor();
+			}
+			ke.consume();
+		}
+		else if ( ke.keycode == 27 )
+		{// ??? probably enter... not found in any documentation => (MultiLine) -> newline
+			editableLabel.setInactiveAndWrite();
+			//editableLabel.resetBGColor();
+			ke.consume();
+		}
+		else
+		{
+			switch ( ke.keycode )
+			{
+			case SWT.KEYPAD_ADD:
+				editableLabel.addOneLineTextToCursor("+");
+				ke.consume();
+				break;
+			case SWT.KEYPAD_CR:
+				if ( !editableLabel.isRestricted() )
+				{
+					if(shift)
+					{//step out of editable label
+						editableLabel.setInactiveAndWrite();
+						//editableLabel.resetBGColor();
+					}else
+					{// write \n
+						editableLabel.addLine();
+					}
+				}
+				else
+				{
+					editableLabel.setInactiveAndWrite();
+					//editableLabel.resetBGColor();
+				}
+				ke.consume();
+				break;
+			case SWT.KEYPAD_DECIMAL:
+				editableLabel.addOneLineTextToCursor(".");
+				ke.consume();
+				break;
+			case SWT.KEYPAD_DIVIDE:
+				editableLabel.addOneLineTextToCursor("/");
+				ke.consume();
+				break;
+			case SWT.KEYPAD_EQUAL:
+				editableLabel.addOneLineTextToCursor("=");
+				ke.consume();
+				break;
+			case SWT.KEYPAD_MULTIPLY:
+				editableLabel.addOneLineTextToCursor("*");
+				ke.consume();
+				break;
+			case SWT.KEYPAD_SUBTRACT:
+				editableLabel.addOneLineTextToCursor("-");
+				ke.consume();
+				break;
+			case SWT.SHIFT:
+				shift = true;
+				break;
+			case SWT.CONTROL:
+				control = true;
+				break;
+			case SWT.ARROW_UP:
+				editableLabel.changeCursorByArrow(1, shift);
+				ke.consume(); 
+				break;
+			case SWT.ARROW_DOWN:
+				editableLabel.changeCursorByArrow(2, shift);
+				ke.consume();
+				break;
+			case SWT.ARROW_LEFT:
+				editableLabel.changeCursorByArrow(3, shift);
+				ke.consume();
+				break;
+			case SWT.ARROW_RIGHT:
+				editableLabel.changeCursorByArrow(4, shift);
+				ke.consume();
+				break;
+			case SWT.HOME:
+				if(shift)
+				{
+					editableLabel.changeCursorLineStart(true);
+				}else
+				{
+					editableLabel.changeCursorLineStart(false);
+				}
+				ke.consume();
+				break;
+			case SWT.END:
+				if(shift)
+				{
+					editableLabel.changeCursorLineEnd(true);
+				}else
+				{
+					editableLabel.changeCursorLineEnd(false);
+				}
+				ke.consume();
+				break;
+			case SWT.PAGE_UP:
+				editableLabel.changeCursorToBeginningOfNote(shift);
+				ke.consume();
+				break;
+			case SWT.PAGE_DOWN:
+				editableLabel.changeCursorToEndOfNote(shift);
+				ke.consume();
+				break;
+			}
+		}
+	}
+
+	@Override
+	public void keyReleased(KeyEvent ke) {
+		switch ( ke.keycode )
+		{
+		case SWT.SHIFT:
+			shift = false;
+			break;
+		case SWT.CONTROL:
+			control = false;
+			break;
+		}
+	}
+
+	@Override
+	public void handleStateChanged(ChangeEvent event)
+	{
+	}
+
+	@Override
+	public void figureMoved(IFigure source)
+	{
+	}
+
+	@Override
+	public void mousePressed(MouseEvent me)
+	{
+		//?????????????????????????????????????????
+		if ( !editableLabel.getParent().hasFocus() ) editableLabel.getParent().requestFocus();
+		editableLabel.getParentFigure().closeComboBoxIfNotThese(editableLabel.getAllowedFigures());
+		if ( me.button != 1 ) return;
+		if(editableLabel.isActive())
+		{
+			editableLabel.changeCursorByMouse(me.getLocation(), shift);
+		}else{
+			//editableLabel.requestFocus();
+			editableLabel.setActive(me.getLocation());
+			editableLabel.setBGColor(editColor);
+		}
+		me.consume();//??? why should it not be passed on?? ... 
+		//?????????????????????????????????????????
+		
+		//____________________________________________________________________________________________________________________________
+		//TODO:
+		//these (in other objects) cause (probably... ) the freeze-up of this label on focus lost if not deactivated.
+		//changing this to (in all used figures might, with some amount of luck, fix it): 
+		/*
+		 *if( *hasFocus* && me.button == 1 && !label.isActive() )
+		 *{
+		 * 	label.setActive();
+		 *}else if( !*hasFocus* && me.button == 1 && label.isActive() )
+		 *{
+		 *	label.setInactive();
+		 *}else
+		 *{
+		 *	//TODO: in-figure event code...
+		 *	me.consume(); //  !!
+		 *}
+		*/
+		// !!  also if(label.isActive()){event.consume();} always*** called at the end of event handling, never omitted never enforced  !!
+		//Note that *hasFocus* needs to be implemented and solution is only considering a special case: 
+		//	all focus changing in GUI is controlled by a specified (mouse) button and it's location
+		// ***TO SOLVE: shift, control, etc.
+		//		1) DO NOT consume() the event and set it in all classes interested individually OR
+		//		2) DO NOT consume() the event and create a listener on main canvas keeping the states with public getters...
+		//____________________________________________________________________________________________________________________________
+	}
+
+	@Override
+	public void mouseReleased(MouseEvent me)
+	{
+		//me.consume();		
+	}
+
+	@Override
+	public void mouseDoubleClicked(MouseEvent me)
+	{
+		if (me.button != 1) return;
+		if(control)
+		{
+			editableLabel.selectLine(me.getLocation());
+		}else
+		{
+			editableLabel.selectTargetWord(me.getLocation());
+		}
+		me.consume();
+	}
+
+	@Override
+	public void mouseDragged(MouseEvent me)
+	{
+		if( editableLabel.isActive() )
+		{
+			editableLabel.changeCursorByMouse(me.getLocation(), true);
+			me.consume();
+		}
+	}
+
+	@Override
+	public void mouseEntered(MouseEvent me)
+	{
+		/*if ( !editableLabel.isActive() ) editableLabel.requestFocus();*/
+		//me.consume();
+	}
+
+	@Override
+	public void mouseExited(MouseEvent me)
+	{
+		//me.consume();
+	}
+
+	@Override
+	public void mouseHover(MouseEvent me)
+	{
+		//me.consume();
+	}
+
+	@Override
+	public void mouseMoved(MouseEvent me)
+	{
+		//me.consume();
+	}
+}

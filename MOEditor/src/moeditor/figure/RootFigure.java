@@ -1,0 +1,172 @@
+/* ----------------------------------------------------------------------------
+* Copyright (C) 2014      European Space Agency
+*                         European Space Operations Centre
+*                         Darmstadt
+*                         Germany
+* ----------------------------------------------------------------------------
+* System                : CCSDS MO Graphical Service Editor
+* ----------------------------------------------------------------------------
+* Licensed under the European Space Agency Public License, Version 2.0
+* You may not use this file except in compliance with the License.
+*
+* Except as expressly set forth in this License, the Software is provided to
+* You on an "as is" basis and without warranties of any kind, including without
+* limitation merchantability, fitness for a particular purpose, absence of
+* defects or errors, accuracy or non-infringement of intellectual property rights.
+* 
+* See the License for the specific language governing permissions and
+* limitations under the License.
+* ----------------------------------------------------------------------------
+*/
+
+package moeditor.figure;
+
+import org.eclipse.draw2d.Figure;
+import org.eclipse.draw2d.Label;
+import org.eclipse.draw2d.ToolbarLayout;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.Image;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
+import moeditor.MultiPageEditor;
+import moeditor.draw2d.Button;
+import moeditor.draw2d.ButtonClickHandler;
+import moeditor.draw2d.TheFigure;
+import moeditor.model.ModelNode;
+
+public class RootFigure extends TheFigure implements /*EditableLabelPrinter,*/ ButtonClickHandler/*, MultiLineEditableLabelPrinter*/
+{
+	private ModelNode specification;
+
+	public RootFigure(TheFigure parentFigure, ModelNode modelNode)
+	{
+		super(parentFigure);
+		specification = modelNode.getChildByLocalName("specification");
+		
+		ToolbarLayout layout = new ToolbarLayout();
+		setLayoutManager(layout);
+		setFocusColor(getNonFocusColor());
+		
+		setFigure();
+	}
+
+	private void setFigure()
+	{
+		if ( specification == null )
+		{
+			MultiPageEditor.getRedStream().println("The root node does not contain any specification node.");
+			return;
+		}
+		
+		setSpecificationComment();
+		setHeading();
+		setTable();
+	}
+	
+	private void setHeading()
+	{
+		Font font = new Font(null, "Arial", 12, SWT.BOLD);
+		
+		Figure figure = new Figure();
+		ToolbarLayout layout = new ToolbarLayout(true);
+		figure.setLayoutManager(layout);
+		
+		Label label = new Label("Area");
+		label.setFont(font);
+		
+		Button newAreaButton = new Button(this, "new.png", "newArea", specification);
+		newAreaButton.setButtonClickHandler(this);
+		
+		figure.add(label);
+		figure.add(newAreaButton);
+		add(figure);
+	}
+	
+	private void setTable()
+	{
+		for ( ModelNode area : specification.getChildrenByLocalName("area") )
+		{
+			Figure figure = new Figure();
+			ToolbarLayout layout = new ToolbarLayout(true);
+			figure.setLayoutManager(layout);
+			
+			Label label = new Label(new Image(getDisplay(), MultiPageEditor.class.getResourceAsStream("/rightarrow.png")));
+			Button delete = new Button(this, "red_cross.png", "delete", area);
+			delete.setButtonClickHandler(this);
+			figure.add(label);
+			figure.add(delete);
+			figure.add(new AreaFigure(this, area));
+			add(figure);
+		}
+	}
+	
+	private void setSpecificationComment()
+	{
+		Font font = new Font(null, "Arial", 12, SWT.BOLD);
+		
+		Figure figure = new Figure();
+		ToolbarLayout layout = new ToolbarLayout(true);
+		figure.setLayoutManager(layout);
+		
+		Label label = new Label("Specification Comment: ");
+		label.setFont(font);
+		
+		/*EditableLabel el = new EditableLabel(this, specification, "comment");
+		el.setText(specification.getAttribute("comment"));
+		el.setPrinter(this);*/
+		/*MultiLineEditableLabel el = new MultiLineEditableLabel(20, 10, ColorConstants.orange, ColorConstants.yellow, specification.getAttribute("comment"), this, false);
+		el.setData(specification);
+		el.setAttribute("comment");
+		el.setPrinter(this);*/
+		
+		figure.add(label);
+		figure.add(new CommentFigure(this, specification));
+		add(figure);
+	}
+
+	/*
+	@Override
+	public void print(EditableLabel label, String text)
+	{
+		label.getData().setAttribute(label.getAttribute(), text);
+		updateGround();
+	}*/
+	
+	private void updateGround()
+	{
+		specification.getMPE().printDocument((Document) specification.getRoot().getNode());
+	}
+
+	@Override
+	public void ButtonClicked(Button button)
+	{
+		if ( button.getId().equals("newArea") )
+		{
+			Document doc = (Document) specification.getRoot().getNode();
+			Element elem = doc.createElementNS(specification.getNamespaceURI(), specification.getNode().getPrefix() + ":" + "area");
+			String number = (new Integer(specification.getMaxOf("number") + 1)).toString();
+			elem.setAttribute("name", "AreaName" + number);
+			elem.setAttribute("number", number);
+			number = (new Integer(specification.getMaxOf("version") + 1)).toString();
+			elem.setAttribute("version", number);
+			specification.appendNode(elem);
+		}
+		else if ( button.getId().equals("delete") )
+		{
+			specification.deleteChild(button.getData());
+		}
+		updateGround();
+		removeAll();
+		setFigure();
+	}
+
+	/*@Override
+	public void print(MultiLineEditableLabel label, String text)
+	{
+		label.getData().setAttribute(label.getAttribute(), text);
+		updateGround();
+	}*/
+	
+}

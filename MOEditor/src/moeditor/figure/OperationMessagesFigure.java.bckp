@@ -1,0 +1,468 @@
+package moeditor.figure;
+
+import java.util.ArrayList;
+
+import moeditor.draw2d.Arrow;
+import moeditor.draw2d.Button;
+import moeditor.draw2d.ButtonClickHandler;
+import moeditor.draw2d.CheckBox;
+import moeditor.draw2d.TableFigure;
+import moeditor.draw2d.TheFigure;
+import moeditor.model.ModelNode;
+
+import org.eclipse.draw2d.ColorConstants;
+import org.eclipse.draw2d.Figure;
+import org.eclipse.draw2d.GridData;
+import org.eclipse.draw2d.GridLayout;
+import org.eclipse.draw2d.Label;
+import org.eclipse.draw2d.LineBorder;
+import org.eclipse.draw2d.MouseEvent;
+import org.eclipse.draw2d.geometry.Point;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Color;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
+public class OperationMessagesFigure extends TableFigure implements ButtonClickHandler
+{
+	ModelNode operation;
+	
+	private Color cellcolor = ColorConstants.lightBlue;
+	private Color white = ColorConstants.white;
+	private Color gray = ColorConstants.gray;
+	
+	private static final String[] interpatternHR = { "SEND", "SUBMIT", "REQUEST", "INVOKE", "PROGRESS", "PUBLISH-SUBSCRIBE" };
+	private static final String[] interpattern = { "sendIP", "submitIP", "requestIP", "invokeIP", "progressIP", "pubsubIP" };
+	
+	private DataTypesTable dataTypes;
+	
+	ArrayList<TheFigure> protectedCombos = new ArrayList<TheFigure>();
+	
+	private int open = -1;
+
+	private Point openlocation;
+
+	private String openmessage = null;
+	
+	private boolean defType = false;
+
+	public OperationMessagesFigure(ModelNode node, TheFigure parentFigure)
+	{
+		super(parentFigure, 4);
+		
+		protectedCombos.add(parentFigure);
+		operation = node;
+		
+		setFocusColor(getNonFocusColor());
+		
+		fillTable();
+	}
+	
+	private void fillTable()
+	{
+		setHeading();
+		setMessages();
+	}
+	
+	private void setMessages()
+	{
+		ModelNode messages = operation.getChildByLocalName("messages");
+		if ( messages == null ) return;
+		
+		for ( ModelNode message : messages.getChildrenArray() )
+		{
+			addCell(getNESMYSL(message.getLocalName()), gray);
+			addCell(message.getLocalName(), gray);
+			addDataTypes(message);
+		}
+	}
+
+	private String getNESMYSL(String localName) {
+		if ( localName.equals("request") || localName.equals("submit") || localName.equals("invoke") || localName.equals("progress") || localName.equals("send") )
+		{
+			return "IN";
+		}
+		else if ( localName.equals("response") || localName.equals("publishNotify") || localName.equals("acknowledgement") || localName.equals("update") || localName.equals("") )
+		{
+			return "OUT";
+		}
+		return localName;
+	}
+
+	private void addDataTypes(ModelNode message)
+	{
+		Figure figure = new Figure();
+		
+		figure.setOpaque(true);
+		figure.setBackgroundColor(white);
+		figure.setBorder(new LineBorder(ColorConstants.black,1));
+		
+		GridLayout layout = new GridLayout(2, false);
+		layout.verticalSpacing = 9;
+		figure.setLayoutManager(layout);
+		
+		Figure arrows = new Figure();
+		
+		arrows.setOpaque(true);
+		arrows.setBackgroundColor(white);
+		
+		GridLayout alayout = new GridLayout(1, false);
+		alayout.verticalSpacing = 0;
+		arrows.setLayoutManager(alayout);
+		/*
+		for ( ModelNode type : message.getChildrenByLocalName("type") )
+		{
+			Button button = new Button(this, "red_cross.png", "delete", type, true);
+			button.setButtonClickHandler(this);
+			figure.add(button);
+
+			String area = type.getAttribute("area");
+			String name = type.getAttribute("name");
+			String temp = area + "::" + name;
+			Label label = new Label();
+			label.setText(type.getAttribute("list").equals("true") ? "List<" + temp  + ">" : temp);
+			
+			figure.add(label);
+			GridData gd = new GridData(SWT.CENTER);
+			figure.setConstraint(label, gd);
+		}
+		
+		for ( ModelNode field : message.getChildrenByLocalName("field") )
+		{
+			Button button = new Button(this, "red_cross.png", "delete", field, true);
+			button.setButtonClickHandler(this);
+			figure.add(button);
+
+			ModelNode type = field.getChildByLocalName("type");
+			String area = type.getAttribute("area");
+			String name = type.getAttribute("name");
+			String temp = area + "::" + name;
+			Label label = new Label();
+			label.setText(field.getAttribute("name") + " -> " + (type.getAttribute("list").equals("true") ? "List<" + temp  + ">" : temp));
+			
+			figure.add(label);
+			GridData gd = new GridData(SWT.CENTER);
+			figure.setConstraint(label, gd);
+		}*/
+		
+		Arrow tobeopened = null;
+		int num = 0;
+		for ( ModelNode field : message.getChildrenArray() )
+		{
+			boolean allOK = false;
+			if ( field.getLocalName().equals("field") )
+			{
+				Button button = new Button(this, "red_cross.png", "delete", field, true);
+				button.setButtonClickHandler(this);
+				figure.add(button);
+
+				ModelNode type = field.getChildByLocalName("type");
+				String area = type.getAttribute("area");
+				String name = type.getAttribute("name");
+				String temp = area + "::" + name;
+				Label label = new Label();
+				label.setText(field.getAttribute("name") + " -> " + (type.getAttribute("list").equals("true") ? "List<" + temp  + ">" : temp));
+				
+				figure.add(label);
+				GridData gd = new GridData(SWT.CENTER);
+				figure.setConstraint(label, gd);
+				allOK = true;
+			}
+			else if ( field.getLocalName().equals("type") )
+			{
+				Button button = new Button(this, "red_cross.png", "delete", field, true);
+				button.setButtonClickHandler(this);
+				figure.add(button);
+
+				String area = field.getAttribute("area");
+				String name = field.getAttribute("name");
+				String temp = area + "::" + name;
+				Label label = new Label();
+				label.setText(field.getAttribute("list").equals("true") ? "List<" + temp  + ">" : temp);
+				
+				figure.add(label);
+				GridData gd = new GridData(SWT.CENTER);
+				figure.setConstraint(label, gd);
+				allOK = true;
+			}
+			
+			if ( allOK )
+			{
+				num += 1;
+				Arrow arrow = new Arrow(this);
+				arrow.setProtectedCombos(protectedCombos);
+				FieldFigure fieldFig = new FieldFigure(arrow, field, num, this, protectedCombos, message.getLocalName());
+				//fieldFig.setAllowedFigures(protectedCombos);
+				arrow.setFigure(fieldFig);
+				arrows.add(arrow);
+				GridData gd = new GridData(SWT.CENTER);
+				arrows.setConstraint(arrow, gd);
+				
+				if ( open == num && openmessage != null )
+				{
+					if ( message.getLocalName().equals(openmessage) ) tobeopened = arrow;
+				}
+			}
+		}
+		
+		Button button = new Button(this, "new.png", "new", message, true);
+		button.setButtonClickHandler(this);
+		figure.add(button);
+		
+		add(figure);
+		GridData gridData = new GridData(SWT.FILL, SWT.FILL, true, true);
+		setConstraint(figure, gridData);
+
+		Button defineComposite = new Button(this, "star.png", "Composite", "defineComposite", message, true);
+		defineComposite.setButtonClickHandler(this);
+		arrows.add(defineComposite);
+		
+		Button defineEnumeration = new Button(this, "star.png", "Enumeration", "defineEnumeration", message, true);
+		defineEnumeration.setButtonClickHandler(this);
+		arrows.add(defineEnumeration);
+
+		add(arrows);
+		GridData gd = new GridData(SWT.LEFT, SWT.TOP, true, false);
+		setConstraint(arrows, gd);
+		
+		if ( tobeopened != null )
+		{
+			tobeopened.open(openlocation);//new Point(getParentFigure().getLocation().x + getSize().width() + 30, getParentFigure().getLocation().y + 81 + open * 25));
+			open = -1;
+		}
+	}
+	
+	private void setHeading()
+	{
+		Label fake;
+		
+		addCell("Operation Identifier", cellcolor);
+		addCell(operation.getAttribute("name"), white, 2, 1);
+		Arrow arrow = new Arrow(this);
+		arrow.setProtectedCombos(protectedCombos);
+		
+		CommentFigure comment = new CommentFigure(arrow, operation);
+		comment.setAllowedFigures(protectedCombos);
+		arrow.setFigure(comment);
+		add(arrow);
+		
+		addCell("Interaction Pattern", cellcolor);
+		addCell(getIP(operation.getLocalName()), white, 2, 1);
+		fake = new Label();
+		add(fake);
+		
+		addCell("Pattern Sequence", cellcolor);
+		addCell("Message", cellcolor);
+		addCell("Body Type", cellcolor);
+		fake = new Label();
+		add(fake);
+	}
+	
+	private String getIP(String localName) {
+		int match = -1;
+		for ( int i = 0; i < interpattern.length; i++ )
+		{
+			if ( interpattern[i].equals(localName) )
+			{
+				match = i;
+				break;
+			}
+		}
+		if ( match != -1 ) return interpatternHR[match];
+		return "!!! Application Error !!!";
+	}
+	
+	@Override
+	public void focusGained()
+	{
+	}
+	
+	@Override
+	public void mousePressed(MouseEvent me)
+	{
+		getRootFigure().closeComboBoxIfNotThis(getParentFigure());
+	}
+
+	@Override
+	public void ButtonClicked(Button button)
+	{
+		
+		if ( button.getId().equals("delete") )
+		{
+			getRootFigure().closeComboBoxIfNotThis(getParentFigure());
+			button.getData().getParent().deleteChild(button.getData());
+			removeAll();
+			fillTable();
+			updateGround();
+		}
+		else if ( button.getId().equals("new") )
+		{
+			getRootFigure().closeComboBoxIfNotThis(getParentFigure());
+			dataTypes = new DataTypesTable(operation, this);
+			dataTypes.setMessage(button.getData());
+			getRootFigure().openComboBox(button.getMouseLocation(), dataTypes);
+		}
+		else if ( button.getId().equals("defineEnumeration") )
+		{
+			defType = true;
+			getRootFigure().closeComboBoxIfNotThis(getParentFigure());
+			dataTypes = new DataTypesTable(operation, this);
+			dataTypes.setMessage(button.getData());
+			EnumerationFigure enumeration = new EnumerationFigure(getNodeOfType(getDataTypes(), "enumeration"), this, protectedCombos, true);
+			getRootFigure().openComboBox(button.getMouseLocation(), enumeration);
+		}
+		else if ( button.getId().equals("defineComposite") )
+		{
+			defType = true;
+			getRootFigure().closeComboBoxIfNotThis(getParentFigure());
+			dataTypes = new DataTypesTable(operation, this);
+			dataTypes.setMessage(button.getData());
+			CompositeFigure composite = new CompositeFigure(getNodeOfType(getDataTypes(), "composite"), this, protectedCombos, true);
+			getRootFigure().openComboBox(button.getMouseLocation(), composite);
+		}
+		else if ( button.getId().equals("canceled") )
+		{
+			defType = false;
+			getRootFigure().closeComboBoxIfNotThis(getParentFigure());
+			ModelNode dt = getDataTypes();
+			dt.deleteChild(button.getData());
+			setDataTypes(dt);
+		}
+		else if ( button.getId().equals("defined") )
+		{
+			defType = false;
+			getRootFigure().closeComboBoxIfNotThis(getParentFigure());
+			ModelNode dt = getDataTypes();
+			addDataType(dataTypes.getMessage(), dt.getParent().getParent().getAttribute("name") + "::" + dt.getParent().getAttribute("name") + "::" + button.getData().getAttribute("name"), ((CheckBox) button.getLink()).isChecked());
+			removeAll();
+			fillTable();
+			updateGround();
+		}
+		else {
+			addDataType(dataTypes.getMessage(), button.getId(), ((CheckBox) button.getLink()).isChecked());
+		}
+	}
+	
+	public void cancelOp(ModelNode node)
+	{
+		if ( !defType ) return;
+		ModelNode dt = getDataTypes();
+		dt.deleteChild(node);
+		setDataTypes(dt);
+	}
+	
+	private ModelNode getNodeOfType(ModelNode dt, String typ)
+	{
+		Document doc = (Document) dt.getRoot().getNode();
+		Element elem = doc.createElementNS(dt.getNamespaceURI(), dt.getNode().getPrefix() + ":" + typ);
+		String number = new Integer(ModelNode.getMax2(dt.getMaxOf8("composite", "shortFormPart"), dt.getMaxOf8("enumeration", "shortFormPart")) + 1).toString();
+		elem.setAttribute("name", typ + "Name" + number);
+		elem.setAttribute("comment", "");
+		elem.setAttribute("shortFormPart", number);
+		
+		ModelNode node = null;
+		
+		if ( typ.equals("composite") )
+		{
+			node = dt.appendNode(elem);
+			Element ext = doc.createElementNS(node.getNamespaceURI(), node.getNode().getPrefix() + ":" + "type");
+			
+			ext.setAttribute("area", "MAL");
+			ext.setAttribute("name", "Composite");
+			ext.setAttribute("list", "false");
+
+			ModelNode extend = node.getChildByLocalName("extends");
+			Element element = doc.createElementNS(node.getNamespaceURI(), node.getNode().getPrefix() + ":" + "extends");
+			extend = node.insertNode(element, 0, 0);
+			extend.appendNode(ext);
+		}
+		else if ( typ.equals("enumeration") )
+		{
+			node = dt.appendNode(elem);
+			Element ele = doc.createElementNS(node.getNamespaceURI(), node.getNode().getPrefix() + ":" + "item");
+			String num = new Integer(node.getMaxOf("nvalue") + 1).toString();
+			ele.setAttribute("value", "name" + num);
+			ele.setAttribute("nvalue", num);
+			ele.setAttribute("comment", "");
+			node.appendNode(ele);
+		}
+		setDataTypes(dt);
+		return node;
+	}
+	
+	private ModelNode getDataTypes()
+	{
+		ServiceRootFigure srf = (ServiceRootFigure) getParentFigure().getParentFigure().getParentFigure().getParentFigure();
+		if ( srf.dataTypes != null )
+		{
+			srf.redraw();
+			return srf.dataTypes;
+		}
+		srf.countCont();
+		ModelNode dt = srf.newDataTypes();
+		srf.redraw();
+		return dt;
+	}
+	
+	private void setDataTypes(ModelNode dt)
+	{
+		ServiceRootFigure srf = (ServiceRootFigure) getParentFigure().getParentFigure().getParentFigure().getParentFigure();
+		srf.dataTypes = dt;
+		srf.redraw();
+	}
+
+	private void updateGround()
+	{
+		operation.getMPE().printDocument((Document) operation.getRoot().getNode());
+	}
+	
+	public void addDataType(ModelNode message, String text, boolean list)
+	{
+		Document doc = (Document) operation.getRoot().getNode();
+		
+		Element elem = doc.createElementNS(operation.getNamespaceURI(), operation.getNode().getPrefix() + ":" + "type");
+		
+		int i = 0;
+		for ( String item : text.split("::") )
+		{
+			switch ( i )
+			{
+			case 0:
+				elem.setAttribute("area", item);
+				break;
+			case 1:
+				if ( !item.isEmpty() ) elem.setAttribute("service", item);
+				break;
+			case 2:
+				elem.setAttribute("name", item);
+				break;
+			default:
+				System.err.println("WTF?!");
+			}
+			i++;
+		}
+		elem.setAttribute("list", list ? "true" : "false");
+		
+		message.appendNode(elem);
+		
+		removeAll();
+		fillTable();
+		updateGround();
+	}
+	
+	public void updateByChild(int num, String messagename, Point location)
+	{
+		open = num;
+		openlocation = location;
+		openmessage  = messagename;
+		removeAll();
+		fillTable();
+	}
+	
+	@Override
+	public void updateFigure()
+	{
+		removeAll();
+		fillTable();
+	}
+}

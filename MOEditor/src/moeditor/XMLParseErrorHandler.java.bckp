@@ -1,0 +1,47 @@
+package moeditor;
+
+import org.xml.sax.ErrorHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
+
+public class XMLParseErrorHandler  implements ErrorHandler {
+	
+	public String message = "AllOK";
+	
+	public XMLParseErrorHandler()
+	{	
+	}
+	
+	private String getParseExceptionInfo(SAXParseException spe)
+	{
+        String systemId = spe.getSystemId();
+        if (systemId == null)
+        {
+            systemId = "null";
+        }
+        String info = "URI = " + systemId + "; Line = " + spe.getLineNumber() + "; Column = " + spe.getColumnNumber() + ":\n" + spe.getMessage();
+        return info;
+    }
+
+	@Override
+	public void error(SAXParseException arg0) throws SAXException
+	{
+		this.message = "ERROR " + getParseExceptionInfo(arg0);
+		throw new SAXException(message);
+	}
+
+	@Override
+	public void fatalError(SAXParseException arg0) throws SAXException
+	{
+		this.message = "FATAL " + getParseExceptionInfo(arg0);
+		throw new SAXException(message);
+	}
+
+	@Override
+	public void warning(SAXParseException arg0) throws SAXException
+	{
+		this.message = "WARNING " + getParseExceptionInfo(arg0);
+		throw new SAXException(message);
+	}
+
+}

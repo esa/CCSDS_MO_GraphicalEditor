@@ -1,0 +1,52 @@
+package moeditor.draw2d;
+
+import java.util.ArrayList;
+
+import org.eclipse.draw2d.ColorConstants;
+import org.eclipse.draw2d.GridData;
+import org.eclipse.draw2d.GridLayout;
+import org.eclipse.swt.SWT;
+
+public class OpenedComboBox extends TheFigure
+{
+	private ArrayList<ComboBoxEntry> comboBoxEntry = new ArrayList<ComboBoxEntry>();
+	
+	public OpenedComboBox(TheFigure parentFigure, int gridWidth)
+	{
+		super(parentFigure);
+		setFocusColor(ColorConstants.white);
+		
+		GridLayout layout = new GridLayout(gridWidth, true);
+		setLayoutManager(layout);
+		
+	}
+
+	public ArrayList<ComboBoxEntry> getComboBoxEntry()
+	{
+		return comboBoxEntry;
+	}
+
+	public void addComboBoxEntry(String value, String text)
+	{
+		ComboBoxEntry newComboBoxEntry = new ComboBoxEntry(this, value, text);
+		add(newComboBoxEntry);
+		GridData gd = new GridData(SWT.CENTER);
+		setConstraint(newComboBoxEntry, gd);
+		comboBoxEntry.add(newComboBoxEntry);
+	}
+	
+	@Override
+	public void focusGained()
+	{
+	}
+	
+	public String getTextByValue(String value)
+	{
+		String text = "WTF";
+		for ( ComboBoxEntry cbe : comboBoxEntry )
+		{
+			if ( value.equals(cbe.getValue()) ) text = cbe.getText();
+		}
+		return text;
+	}
+}

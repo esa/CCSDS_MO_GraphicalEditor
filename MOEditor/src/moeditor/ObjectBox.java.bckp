@@ -1,0 +1,42 @@
+package moeditor;
+
+import moeditor.draw2d.TableFigure;
+import moeditor.draw2d.TheFigure;
+import moeditor.model.ObjectObject;
+
+public class ObjectBox extends TableFigure
+{
+	private ObjectObject object;
+	
+	public ObjectBox(TheFigure parentFigure, ObjectObject object)
+	{
+		super(parentFigure, 2);
+		
+		setObject(object);
+		setMovable(true);
+		
+		fillTable();
+	}
+	
+	private void fillTable()
+	{
+		addHeadingCell(getObject().getName(), 2, 1);
+		addHeadingCell("Number");
+		addCell(getObject().getNumber());
+		addHeadingCell("Area");
+		addCell(getObject().getAreaName());
+		addHeadingCell("Service");
+		addCell(getObject().getServiceName());
+	}
+
+	public ObjectObject getObject()
+	{
+		return object;
+	}
+
+	private void setObject(ObjectObject object)
+	{
+		this.object = object;
+		this.object.setObjectBox(this);
+	}
+}

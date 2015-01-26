@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<!--
+/* ***************************************************************************
+* Copyright (C) 2014      European Space Agency
+*                         European Space Operations Centre
+*                         Darmstadt
+*                         Germany
+* ****************************************************************************
+* System                : CCSDS MO Graphical Service Editor
+* ****************************************************************************
+* Licensed under the European Space Agency Public License, Version 2.0
+* You may not use this file except in compliance with the License.
+*
+* Except as expressly set forth in this License, the Software is provided to
+* You on an "as is" basis and without warranties of any kind, including without
+* limitation merchantability, fitness for a particular purpose, absence of
+* defects or errors, accuracy or non-infringement of intellectual property rights.
+* 
+* See the License for the specific language governing permissions and
+* limitations under the License.
+* ***************************************************************************
+*/-->
+
+<plugin>
+   <extension
+         point="org.eclipse.ui.editors">
+      <editor
+            class="moeditor.MultiPageEditor"
+            contributorClass="moeditor.MultiPageEditorContributor"
+            default="false"
+            extensions="mo"
+            id="moeditor.TheEditor"
+            name="CCSDS MO Specification Editor">
+      </editor>
+   </extension>
+   <extension
+         point="org.eclipse.ui.newWizards">
+      <category
+            name="CCSDS Wizards"
+            id="ccsds">
+      </category>
+      <wizard
+            name="CCSDS MO Specification File"
+            category="ccsds"
+            class="moeditor.wizards.NewWizard"
+            id="moeditor.wizards.NewWizard">
+      </wizard>
+   </extension>
+   <extension
+         id="xmlerror"
+         name="XML Error Marks"
+         point="org.eclipse.core.resources.markers">
+      <super
+            type="org.eclipse.core.resources.problemmarker">
+      </super>
+      <super
+            type="org.eclipse.core.resources.textmarker">
+      </super>
+      <persistent
+            value="true">
+      </persistent>
+   </extension>
+   <extension
+         point="org.eclipse.ui.menus">
+      <menuContribution
+            allPopups="false"
+            locationURI="popup:moeditor.xml.outlineMenu">
+         <command
+               commandId="moeditor.removeCommand"
+               label="Remove"
+               style="push">
+         </command>
+      </menuContribution>
+   </extension>
+   <extension
+         point="org.eclipse.ui.commands">
+      <command
+            id="moeditor.removeCommand"
+            name="removeCommand">
+      </command>
+   </extension>
+   <extension
+         point="org.eclipse.ui.handlers">
+      <handler
+            class="moeditor.xml.CommandHandler"
+            commandId="moeditor.removeCommand">
+      </handler>
+   </extension>
+   <extension
+         id="datatypeerror"
+         name="Data Type Reference Error"
+         point="org.eclipse.core.resources.markers">
+      <super
+            type="org.eclipse.core.resources.problemmarker">
+      </super>
+      <persistent
+            value="true">
+      </persistent>
+   </extension>
+</plugin>

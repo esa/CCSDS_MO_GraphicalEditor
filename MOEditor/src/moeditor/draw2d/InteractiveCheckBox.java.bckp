@@ -1,0 +1,32 @@
+package moeditor.draw2d;
+
+import org.eclipse.draw2d.MouseEvent;
+
+public class InteractiveCheckBox extends CheckBox
+{
+	private CheckBoxCheckedHandler handler = null;
+	
+	public InteractiveCheckBox(TheFigure parentFigure)
+	{
+		super(parentFigure);
+	}
+	
+	public void setCheckBoxCheckedHandler(CheckBoxCheckedHandler handler)
+	{
+		this.handler = handler;
+	}
+	
+	@Override
+	public void mousePressed(MouseEvent me)
+	{
+		toggleChecked();
+	}
+
+	private void toggleChecked()
+	{
+		if ( isChecked() ) setChecked(false);
+		else setChecked(true);
+		if ( handler != null ) handler.CheckBoxChecked(isChecked());
+	}
+
+}

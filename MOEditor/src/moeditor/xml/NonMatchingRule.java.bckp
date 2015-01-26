@@ -1,0 +1,33 @@
+package moeditor.xml;
+
+import org.eclipse.jface.text.rules.ICharacterScanner;
+import org.eclipse.jface.text.rules.IPredicateRule;
+import org.eclipse.jface.text.rules.IToken;
+import org.eclipse.jface.text.rules.Token;
+
+public class NonMatchingRule implements IPredicateRule
+{
+	public NonMatchingRule()
+	{
+		super();
+	}
+
+	@Override
+	public IToken evaluate(ICharacterScanner scanner)
+	{
+		return Token.UNDEFINED;
+	}
+
+	@Override
+	public IToken getSuccessToken()
+	{
+		return Token.UNDEFINED;
+	}
+
+	@Override
+	public IToken evaluate(ICharacterScanner scanner, boolean resume)
+	{
+		return Token.UNDEFINED;
+	}
+
+}

@@ -1,0 +1,63 @@
+package moeditor.figure;
+
+import java.util.ArrayList;
+
+import org.w3c.dom.Document;
+
+import moeditor.draw2d.EditableLabel;
+import moeditor.draw2d.MultiLineEditableLabel;
+import moeditor.draw2d.MultiLineEditableLabelPrinter;
+import moeditor.draw2d.TableFigure;
+import moeditor.draw2d.TheFigure;
+import moeditor.model.ModelNode;
+
+public class CommentFigure extends TableFigure implements MultiLineEditableLabelPrinter
+{
+	private ModelNode node;
+	private ArrayList<TheFigure> allowedFigures = new ArrayList<TheFigure>();
+	
+	public CommentFigure(TheFigure parentFigure, ModelNode node)
+	{
+		super(parentFigure, 1);
+		this.node = node;
+		
+		setFocusColor(getNonFocusColor());
+		allowedFigures.add(this);
+		
+		setFigure();
+	}
+	
+	public void setAllowedFigures(ArrayList<TheFigure> allowedFigures)
+	{
+		for ( TheFigure fig : allowedFigures )
+		{
+			this.allowedFigures.add(fig);
+		}
+	}
+	
+	private void setFigure()
+	{
+		addHeadingCell(node.getAttribute("name") + " Comment");
+		EditableLabel comment = new EditableLabel(this, node, "comment", allowedFigures, false);
+		comment.setPrinter(this);
+		//comment.setData(node);
+		//comment.setAttribute("comment");
+		/*EditableLabel comment = new EditableLabel(this, true, allowedFigures , node, "comment");
+		comment.setPrinter(this);
+		comment.setText(node.getAttribute("comment"));*/
+		addLabel(comment, getNonFocusColor(), 1);
+	}
+
+	@Override
+	public void print(MultiLineEditableLabel label, String text)
+	{
+		label.getData().setAttribute(label.getAttribute(), text);
+		node.getMPE().printDocument((Document) node.getRoot().getNode());
+	}
+
+	@Override
+	public void isAboutToBeClosed()
+	{
+		getParentFigure().isAboutToBeClosed();
+	}
+}

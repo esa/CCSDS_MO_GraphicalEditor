@@ -1,0 +1,42 @@
+package moeditor.figure;
+
+import java.util.ArrayList;
+
+import moeditor.draw2d.TableFigure;
+import moeditor.draw2d.TheFigure;
+
+public class WarnFigure extends TableFigure
+{
+	private ArrayList<TheFigure> allowedFigures = new ArrayList<TheFigure>();
+	private String text;
+
+	public WarnFigure(TheFigure parentFigure, String text)
+	{
+		super(parentFigure, 1);
+		
+		//setFocusColor(getNonFocusColor());
+		allowedFigures.add(this);
+		this.text = text;
+		
+		setFigure();
+	}
+	
+	public void setAllowedFigures(ArrayList<TheFigure> allowedFigures)
+	{
+		for ( TheFigure fig : allowedFigures )
+		{
+			this.allowedFigures .add(fig);
+		}
+	}
+	
+	private void setFigure()
+	{
+		addCell(text);
+	}
+
+	@Override
+	public void isAboutToBeClosed()
+	{
+		getParentFigure().isAboutToBeClosed();
+	}
+}

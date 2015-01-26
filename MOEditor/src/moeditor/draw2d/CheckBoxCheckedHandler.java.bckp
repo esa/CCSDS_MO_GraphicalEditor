@@ -1,0 +1,6 @@
+package moeditor.draw2d;
+
+public interface CheckBoxCheckedHandler
+{
+	public void CheckBoxChecked(boolean check);
+}

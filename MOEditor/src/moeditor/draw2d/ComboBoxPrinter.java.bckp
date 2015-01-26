@@ -1,0 +1,6 @@
+package moeditor.draw2d;
+
+public interface ComboBoxPrinter
+{
+	public void print(ComboBox comboBox, String text);
+}

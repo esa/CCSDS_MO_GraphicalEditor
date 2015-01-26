@@ -1,0 +1,185 @@
+/* ----------------------------------------------------------------------------
+* Copyright (C) 2014      European Space Agency
+*                         European Space Operations Centre
+*                         Darmstadt
+*                         Germany
+* ----------------------------------------------------------------------------
+* System                : CCSDS MO Graphical Service Editor
+* ----------------------------------------------------------------------------
+* Licensed under the European Space Agency Public License, Version 2.0
+* You may not use this file except in compliance with the License.
+*
+* Except as expressly set forth in this License, the Software is provided to
+* You on an "as is" basis and without warranties of any kind, including without
+* limitation merchantability, fitness for a particular purpose, absence of
+* defects or errors, accuracy or non-infringement of intellectual property rights.
+* 
+* See the License for the specific language governing permissions and
+* limitations under the License.
+* ----------------------------------------------------------------------------
+*/
+
+package moeditor.figure;
+
+import java.util.ArrayList;
+
+import moeditor.draw2d.Button;
+import moeditor.draw2d.ButtonClickHandler;
+import moeditor.draw2d.CheckBox;
+import moeditor.draw2d.EditableLabel;
+import moeditor.draw2d.MultiLineEditableLabel;
+import moeditor.draw2d.MultiLineEditableLabelPrinter;
+import moeditor.draw2d.TableFigure;
+import moeditor.draw2d.TheFigure;
+import moeditor.model.ModelNode;
+
+import org.eclipse.draw2d.Label;
+import org.eclipse.draw2d.MouseEvent;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
+public class ErrorFigure extends TableFigure implements MultiLineEditableLabelPrinter, ButtonClickHandler
+{
+	private ModelNode error;
+	private DataTypesTable dataTypes;
+	private ArrayList<TheFigure> allowedFigures = new ArrayList<TheFigure>();
+	
+	public ErrorFigure(TheFigure parentFigure, ModelNode item)
+	{
+		super(parentFigure, 4);
+		error = item;
+		allowedFigures.add(parentFigure);
+		setFocusColor(getNonFocusColor());
+		setFigure();
+	}
+	
+	private void setFigure()
+	{
+		EditableLabel name = new EditableLabel(this, error, "name", allowedFigures);
+		name.setPrinter(this);
+		
+		EditableLabel number = new EditableLabel(this, error, "number", allowedFigures);
+		number.setPrinter(this);
+		
+		EditableLabel comment = new EditableLabel(this, error, "comment", allowedFigures, false);
+		comment.setPrinter(this);
+		
+		addHeadingCell("Error");
+		addHeadingCell("Error #");
+		addHeadingCell("Error Comment");
+		addHeadingCell("Extra Info Type");
+		
+		addLabel(name);
+		addLabel(number);
+		addLabel(comment);
+		
+		Button newType = new Button(this, "new.png", "newType", error, true);
+		newType.setButtonClickHandler(this);
+		
+		ModelNode extraInformation = error.getChildByLocalName("extraInformation");
+		if ( extraInformation == null )
+		{
+			addCellWithButtonRight(getNonFocusColor(), newType, "Not Used");
+		}
+		else
+		{
+			Button delType = new Button(this, "red_cross.png", "delType", extraInformation, true);
+			ModelNode typ = extraInformation.getChildByLocalName("type");
+			String text = "";
+			text += typ.getAttribute("area");
+			text += "::";
+			text += typ.getAttribute("name");
+			if ( typ.getAttribute("list").equals("true") )
+			{
+				text = "List<" + text + ">";
+			}
+			
+			addCellWithTwoButtons(new Label(text), getNonFocusColor(), 1, delType, newType);
+			addHeadingCell("Extra Info Comment");
+			EditableLabel com = new EditableLabel(this, extraInformation, "comment", allowedFigures, false);
+			com.setPrinter(this);
+			addLabel(com, 3);
+		}
+	}
+	
+	@Override
+	public void focusGained()
+	{
+	}
+	
+	@Override
+	public void mousePressed(MouseEvent me)
+	{
+		getRootFigure().closeComboBoxIfNotThis(getParentFigure());
+	}
+
+	@Override
+	public void print(MultiLineEditableLabel label, String text)
+	{
+		label.getData().setAttribute(label.getAttribute(), text);
+		error.getMPE().printDocument((Document) error.getRoot().getNode());
+	}
+
+	@Override
+	public void ButtonClicked(Button button)
+	{
+		getRootFigure().closeComboBoxIfNotThis(getParentFigure());
+		if ( button.getId().equals("newType") )
+		{
+			dataTypes = new DataTypesTable(error, this);
+			dataTypes.setMessage(button.getData());
+			getRootFigure().openComboBox(button.getMouseLocation(), dataTypes);
+		}
+		else if ( button.getId().equals("delType") )
+		{
+			error.deleteChild(error.getChildByLocalName("extraInformation"));
+		}
+		else
+		{
+			Document doc = (Document) error.getRoot().getNode();
+			
+			ModelNode extraInformation = error.getChildByLocalName("extraInformation");
+			
+			if ( extraInformation == null )
+			{
+				Element el = doc.createElementNS(error.getNamespaceURI(), error.getNode().getPrefix() + ":" + "extraInformation");
+				el.setAttribute("comment", "");
+				extraInformation = error.appendNode(el);
+			}
+			
+			ModelNode typ = extraInformation.getChildByLocalName("type");
+			if ( typ != null ) extraInformation.deleteChild(typ);
+
+			Element elem = doc.createElementNS(error.getNamespaceURI(), error.getNode().getPrefix() + ":" + "type");
+			
+			int i = 0;
+			for ( String item : button.getId().split("::") )
+			{
+				switch ( i )
+				{
+				case 0:
+					elem.setAttribute("area", item);
+					break;
+				case 1:
+					if ( !item.isEmpty() ) elem.setAttribute("service", item);
+					break;
+				case 2:
+					elem.setAttribute("name", item);
+					break;
+				default:
+					System.err.println("WTF?!");
+				}
+				i++;
+			}
+			
+			elem.setAttribute("list", ((CheckBox) button.getLink()).isChecked() ? "true" : "false");
+				
+			extraInformation.appendNode(elem);
+			
+			removeAll();
+			setFigure();
+		}
+		error.getMPE().printDocument((Document) error.getRoot().getNode());
+	}
+
+}

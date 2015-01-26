@@ -1,0 +1,6 @@
+package moeditor.draw2d;
+
+public interface ButtonClickHandler
+{
+	public void ButtonClicked(Button button);
+}

@@ -1,0 +1,94 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<!--
+/* ***************************************************************************
+* Copyright (C) 2014      European Space Agency
+*                         European Space Operations Centre
+*                         Darmstadt
+*                         Germany
+* ****************************************************************************
+* System                : CCSDS MO Graphical Service Editor
+* ****************************************************************************
+* Licensed under the European Space Agency Public License, Version 2.0
+* You may not use this file except in compliance with the License.
+*
+* Except as expressly set forth in this License, the Software is provided to
+* You on an "as is" basis and without warranties of any kind, including without
+* limitation merchantability, fitness for a particular purpose, absence of
+* defects or errors, accuracy or non-infringement of intellectual property rights.
+* 
+* See the License for the specific language governing permissions and
+* limitations under the License.
+* ***************************************************************************
+*/-->
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>MOEditor</groupId>
+  <artifactId>MOEditor</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <build>
+    <sourceDirectory>src</sourceDirectory>
+    <resources>
+      <resource>
+        <directory>src</directory>
+        <excludes>
+          <exclude>**/*.java</exclude>
+        </excludes>
+      </resource>
+    </resources>
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.1</version>
+        <configuration>
+          <source>1.6</source>
+          <target>1.6</target>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+  <dependencies>
+  	<dependency>
+  		<groupId>int.esa.ccsds.mo</groupId>
+  		<artifactId>StubGenerator_Docs</artifactId>
+  	</dependency>
+  	<dependency>
+  		<groupId>int.esa.ccsds.mo</groupId>
+  		<artifactId>StubGenerator_Interfaces</artifactId>
+  	</dependency>
+  	<dependency>
+  		<groupId>int.esa.ccsds.mo</groupId>
+  		<artifactId>StubGenerator_Java</artifactId>
+  	</dependency>
+  	<dependency>
+  		<groupId>int.esa.ccsds.mo</groupId>
+  		<artifactId>StubGenerator_Lib</artifactId>
+  	</dependency>
+  </dependencies>
+  <dependencyManagement>
+  	<dependencies>
+  		<dependency>
+  			<groupId>int.esa.ccsds.mo</groupId>
+  			<artifactId>StubGenerator_Docs</artifactId>
+  			<version>1.1</version>
+  			<scope>runtime</scope>
+  		</dependency>
+  		<dependency>
+  			<groupId>int.esa.ccsds.mo</groupId>
+  			<artifactId>StubGenerator_Interfaces</artifactId>
+  			<version>1.1</version>
+  			<scope>runtime</scope>
+  		</dependency>
+  		<dependency>
+  			<groupId>int.esa.ccsds.mo</groupId>
+  			<artifactId>StubGenerator_Java</artifactId>
+  			<version>1.1</version>
+  			<scope>runtime</scope>
+  		</dependency>
+  		<dependency>
+  			<groupId>int.esa.ccsds.mo</groupId>
+  			<artifactId>StubGenerator_Lib</artifactId>
+  			<version>1.1</version>
+  			<scope>runtime</scope>
+  		</dependency>
+  	</dependencies>
+  </dependencyManagement>
+</project>

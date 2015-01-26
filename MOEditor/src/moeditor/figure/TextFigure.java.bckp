@@ -1,0 +1,64 @@
+package moeditor.figure;
+
+import java.util.ArrayList;
+
+import moeditor.draw2d.EditableLabel;
+import moeditor.draw2d.MultiLineEditableLabel;
+import moeditor.draw2d.MultiLineEditableLabelPrinter;
+import moeditor.draw2d.TableFigure;
+import moeditor.draw2d.TheFigure;
+import moeditor.model.ModelNode;
+
+import org.w3c.dom.Document;
+
+public class TextFigure extends TableFigure implements MultiLineEditableLabelPrinter
+{
+		private ModelNode node;
+		private ArrayList<TheFigure> allowedFigures = new ArrayList<TheFigure>();
+		
+		public TextFigure(TheFigure parentFigure, ModelNode node, String text)
+		{
+			super(parentFigure, 1);
+			this.node = node;
+			
+			setFocusColor(getNonFocusColor());
+			allowedFigures.add(this);
+			
+			setFigure(text);
+		}
+		
+		public void setAllowedFigures(ArrayList<TheFigure> allowedFigures)
+		{
+			for ( TheFigure fig : allowedFigures )
+			{
+				this.allowedFigures.add(fig);
+			}
+		}
+		
+		private void setFigure(String text)
+		{
+			addHeadingCell(node.getAttribute("name") + " Text");
+			EditableLabel comment = new EditableLabel(this, node, "text", allowedFigures, false, text);
+			comment.setPrinter(this);
+			addLabel(comment, getNonFocusColor(), 1);
+		}
+
+		@Override
+		public void print(MultiLineEditableLabel label, String text)
+		{
+			//label.getData().setAttribute(label.getAttribute(), text);
+			text += "\n";
+			for ( int i = 0; i < label.getData().getDepth() - 1; i++ )
+			{
+				text += "\t";
+			}
+			label.getData().getNode().setTextContent(text);
+			node.getMPE().printDocument((Document) node.getRoot().getNode());
+		}
+
+		@Override
+		public void isAboutToBeClosed()
+		{
+			getParentFigure().isAboutToBeClosed();
+		}
+	}
