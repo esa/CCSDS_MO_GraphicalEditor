@@ -92,6 +92,7 @@ public class MultiLineLabelHandler implements MouseListener, FigureListener, Cha
 	
 	private boolean handleKey(KeyEvent ke)
 	{
+		System.out.println("Keycode = " + ke.keycode + ", character = " + ke.character);
 		if ( ( 32 <= ke.keycode && ke.keycode < 127 ) ) return true;
 		if ( ke.character == SWT.DEL ) return true;
 		if ( ke.character == '\b' ) return true;
@@ -137,11 +138,11 @@ public class MultiLineLabelHandler implements MouseListener, FigureListener, Cha
 		}
 		//From here on in this method checking editableLabel.isActive is unnecessary... see: mousePressed() comments
 		
-		if ( !handleKey(ke) )
+		/*if ( !handleKey(ke) )
 		{//unknown key... no writing...
 			ke.consume();
 			return;
-		}
+		}*/
 		
 		if ( control )
 		{//special action while CTRL is pressed
@@ -331,6 +332,9 @@ public class MultiLineLabelHandler implements MouseListener, FigureListener, Cha
 				editableLabel.changeCursorToEndOfNote(shift);
 				ke.consume();
 				break;
+			default:
+				if ( (int) ke.character != 0 )	editableLabel.addOneLineTextToCursor(Character.toString(ke.character));
+				ke.consume();
 			}
 		}
 	}

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <site>
-   <feature url="features/ccsds.mo.editor_1.2.3.201501261722.jar" id="ccsds.mo.editor" version="1.2.3.201501261722">
+   <feature url="features/ccsds.mo.editor_1.2.3.201502231551.jar" id="ccsds.mo.editor" version="1.2.3.201502231551">
       <category name="EuropeanSpaceAgency"/>
    </feature>
    <category-def name="EuropeanSpaceAgency" label="ESA"/>

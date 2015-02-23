@@ -21,8 +21,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Bundle-ActivationPolicy: lazy
 Bundle-Vendor: ISS/ESA
 Bundle-ClassPath: .,
- external:$M2_REPO$/int/esa/ccsds/mo/StubGenerator/1.1/StubGenerator-1.1.jar,
- external:$M2_REPO$/int/esa/ccsds/mo/StubGenerator_Docs/1.1/StubGenerator_Docs-1.1.jar,
- external:$M2_REPO$/int/esa/ccsds/mo/StubGenerator_Interfaces/1.1/StubGenerator_Interfaces-1.1.jar,
- external:$M2_REPO$/int/esa/ccsds/mo/StubGenerator_Java/1.1/StubGenerator_Java-1.1.jar,
- external:$M2_REPO$/int/esa/ccsds/mo/StubGenerator_Lib/1.1/StubGenerator_Lib-1.1.jar
+ lib/StubGenerator_Docs-1.1.jar,
+ lib/StubGenerator_Interfaces-1.1.jar,
+ lib/StubGenerator_Java-1.1.jar,
+ lib/StubGenerator_Lib-1.1.jar
